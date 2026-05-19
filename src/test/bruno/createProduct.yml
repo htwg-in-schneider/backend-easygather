@@ -12,7 +12,9 @@ http:
       {
         "title": "Snack-Box WebTech",
         "description": "Kleine Snack-Auswahl für die Vorlesungspause im Park.",
-        "category": "FOOD_AND_DRINKS",
+        "category": {
+          "id": 3
+        },
         "price": 15.50,
         "imageUrl": "https://picsum.photos/seed/easygather-snackbox/640/480"
       }

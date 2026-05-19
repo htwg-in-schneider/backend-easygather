@@ -3,11 +3,12 @@ package de.htwg.in.schneider.easygather.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
@@ -19,7 +20,8 @@ public class Product {
     private String title;
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     private Double price;
@@ -92,13 +94,7 @@ public class Product {
 
     @Override
     public String toString() {
-        return "Product{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", category=" + category +
-                ", price=" + price +
-                ", imageUrl='" + imageUrl + '\'' +
-                '}';
+        return "Product{id=" + id + ", title='" + title + '\'' + ", description='" + description + '\'' + ", category="
+                + category + ", price=" + price + ", imageUrl='" + imageUrl + '\'' + '}';
     }
 }

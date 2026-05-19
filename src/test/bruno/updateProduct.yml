@@ -13,7 +13,9 @@ http:
         "id": 2,
         "title": "Standard-Korb WebTech",
         "description": "Aktualisierter Allrounder-Korb für Treffen im Park.",
-        "category": "PICNIC_BASKETS",
+        "category": {
+          "id": 1
+        },
         "price": 69.00,
         "imageUrl": "https://picsum.photos/seed/easygather-standardkorb/640/480"
       }

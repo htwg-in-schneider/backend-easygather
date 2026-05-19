@@ -67,3 +67,14 @@ Die Anwendung startet auf **http://localhost:8081**.
   - `DELETE /api/product/{id}` – löschen (204 bei Erfolg, 404 wenn nicht gefunden)
 - Keine Validierung der Entities vor dem Speichern
 - Bruno-Requests unter `src/test/bruno` (`getProduct.yml`, `updateProduct.yml`, `deleteProduct.yml`, …)
+
+### Iteration 5: Added 1:n relation Category – Product
+
+- **1 Kategorie → n Produkte** (passend zu EasyGather, nicht Review wie bei Saitenweise)
+- `Category` als JPA-Entity mit `title` und `shopCategory` (`picknickkoerbe`, `party-event`, `essen-getraenke`)
+- `Product#category` als `@ManyToOne`; `Category#products` mit `@JsonIgnore` (keine Endlosschleife im JSON)
+- `GET /api/category` – alle Kategorien
+- `GET /api/product/category/{categoryId}` – Produkte einer Kategorie
+- `POST /api/product` mit `"category": { "id": 1 }` im JSON-Body
+- Bruno: `getCategories.yml`, `getProductsByCategory.yml`
+- **Nach Schema-Wechsel:** H2-DB löschen (`Remove-Item -Recurse -Force .\target\easygather-db*`) und Backend neu starten
