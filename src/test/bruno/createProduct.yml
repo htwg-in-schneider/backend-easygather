@@ -10,8 +10,11 @@ http:
     type: json
     data: |-
       {
-        "title": "Date-Korb",
-        "description": "Kleine, stilvolle Auswahl für zwei Personen."
+        "title": "Snack-Box WebTech",
+        "description": "Kleine Snack-Auswahl für die Vorlesungspause im Park.",
+        "category": "FOOD_AND_DRINKS",
+        "price": 15.50,
+        "imageUrl": "https://picsum.photos/seed/easygather-snackbox/640/480"
       }
   auth: inherit
 

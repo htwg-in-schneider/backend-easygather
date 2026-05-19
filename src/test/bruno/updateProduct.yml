@@ -1,0 +1,26 @@
+info:
+  name: updateProduct
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: http://localhost:8081/api/product/2
+  body:
+    type: json
+    data: |-
+      {
+        "id": 2,
+        "title": "Standard-Korb WebTech",
+        "description": "Aktualisierter Allrounder-Korb für Treffen im Park.",
+        "category": "PICNIC_BASKETS",
+        "price": 69.00,
+        "imageUrl": "https://picsum.photos/seed/easygather-standardkorb/640/480"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -56,3 +56,14 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `DataLoader` befüllt die DB beim ersten Start mit 7 EasyGather-Produkten
 - `GET /api/product` liest aus der Datenbank (`productRepository.findAll()`)
 - Test: Backend starten, `curl http://localhost:8081/api/product` – IDs werden von der DB vergeben (1, 2, 3, …)
+
+### Iteration 4: CRUD for Products
+
+- Vollständiges CRUD für Produkte:
+  - `GET /api/product` – alle Produkte
+  - `GET /api/product/{id}` – ein Produkt (404 wenn nicht gefunden)
+  - `POST /api/product` – anlegen (201)
+  - `PUT /api/product/{id}` – aktualisieren (404 wenn nicht gefunden)
+  - `DELETE /api/product/{id}` – löschen (204 bei Erfolg, 404 wenn nicht gefunden)
+- Keine Validierung der Entities vor dem Speichern
+- Bruno-Requests unter `src/test/bruno` (`getProduct.yml`, `updateProduct.yml`, `deleteProduct.yml`, …)
