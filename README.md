@@ -42,3 +42,8 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `ProductController` liefert Beispieldaten mit `id`, `title`, `description`, `category`, `price`, `imageUrl` (für späteres Frontend)
 - Test GET: `curl http://localhost:8081/api/product`
 - Test POST: wie Iteration 1b (PowerShell: `Invoke-RestMethod` oder `curl.exe` mit `--%`)
+
+### Iteration 2: CORS Configuration
+
+- `WebConfig` mit globaler CORS-Konfiguration (`config/WebConfig.java`)
+- Erlaubt dem Frontend (z. B. `http://localhost:5173` oder GitHub Pages unter `https://htwg-in-schneider.github.io/frontend-easygather/`), die Backend-APIs ohne Cross-Origin-Fehler aufzurufen
