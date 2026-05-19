@@ -94,20 +94,6 @@ public class DataLoader {
         limonade.setPrice(8.50);
         limonade.setImageUrl("https://picsum.photos/seed/easygather-limonade/640/480");
 
-        Product miniSnacks = new Product();
-        miniSnacks.setTitle("Mini-Snack-Tüte");
-        miniSnacks.setDescription("Kleine Auswahl an Knabbereien für zwischendurch.");
-        miniSnacks.setCategory(partyEvent);
-        miniSnacks.setPrice(18.00);
-        miniSnacks.setImageUrl("https://picsum.photos/seed/easygather-minisnacks/640/480");
-
-        Product kaffeepause = new Product();
-        kaffeepause.setTitle("Kaffeepause-Box");
-        kaffeepause.setDescription("Kaffee, Gebäck und Obst für kurze Pausen im Freien.");
-        kaffeepause.setCategory(foodAndDrinks);
-        kaffeepause.setPrice(22.00);
-        kaffeepause.setImageUrl("https://picsum.photos/seed/easygather-kaffeepause/640/480");
-
         productRepository.saveAll(Arrays.asList(
                 dateKorb,
                 standardKorb,
@@ -115,9 +101,7 @@ public class DataLoader {
                 ledLichterkette,
                 geburtstagsDeko,
                 pizza,
-                limonade,
-                miniSnacks,
-                kaffeepause));
+                limonade));
         LOGGER.info("Initial data loaded successfully.");
     }
 }
