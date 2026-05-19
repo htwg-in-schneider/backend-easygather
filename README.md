@@ -35,3 +35,10 @@ Die Anwendung startet auf **http://localhost:8081**.
 - Test GET: `curl http://localhost:8081/api/product`
 - Test POST: `curl -X POST http://localhost:8081/api/product -H "Content-Type: application/json" -d "{\"title\":\"Date-Korb\",\"description\":\"Kleine, stilvolle Auswahl für zwei Personen.\"}"`
 - Bruno: `src/test/bruno/createProduct.yml`
+
+### Iteration 1c: REST-Controller with model class
+
+- Model-Klassen `Product` und `Category` unter `src/main/java/.../model/`
+- `ProductController` liefert Beispieldaten mit `id`, `title`, `description`, `category`, `price`, `imageUrl` (für späteres Frontend)
+- Test GET: `curl http://localhost:8081/api/product`
+- Test POST: wie Iteration 1b (PowerShell: `Invoke-RestMethod` oder `curl.exe` mit `--%`)
