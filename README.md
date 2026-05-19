@@ -78,3 +78,24 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `POST /api/product` mit `"category": { "id": 1 }` im JSON-Body
 - Bruno: `getCategories.yml`, `getProductsByCategory.yml`
 - **Nach Schema-Wechsel:** H2-DB löschen (`Remove-Item -Recurse -Force .\target\easygather-db*`) und Backend neu starten
+
+### Iteration 6: Search and filter products
+
+- `GET /api/product` mit optionalen Query-Parametern (kombinierbar):
+  - `name` – Suche im Titel (Teilstring, case-insensitive)
+  - `categoryId` – Filter nach Kategorie-ID (`1`, `2`, `3`)
+  - `shopCategory` – Filter nach Shop-Slug (alle drei Kategorien):
+    - `picknickkoerbe` → Picknickkörbe
+    - `party-event` → Party & Event
+    - `essen-getraenke` → Essen & Getränke
+  - `maxPrice` – nur Produkte mit Preis ≤ angegebenem Wert (beliebige Zahl, z. B. `25` oder `50`)
+- Ohne Parameter: alle Produkte
+- Beispiele:
+  - `GET /api/product?shopCategory=party-event`
+  - `GET /api/product?maxPrice=25`
+  - `GET /api/product?shopCategory=essen-getraenke&maxPrice=15`
+  - `GET /api/product?name=Korb&categoryId=1`
+- `GET /api/category` – alle Kategorien
+- `GET /api/category/translation` – Map `shopCategory` → Anzeigename (für Filter-Dropdown im Frontend)
+- Mehr Beispielprodukte im `DataLoader`
+- Bruno: `getAllProductsFilterAndSearch.yml`, `getCategoryTranslation.yml`

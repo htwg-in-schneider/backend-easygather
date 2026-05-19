@@ -1,0 +1,22 @@
+info:
+  name: getAllProductsFilterAndSearch
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: http://localhost:8081/api/product
+  params:
+    - name: shopCategory
+      value: picknickkoerbe
+      type: query
+    - name: maxPrice
+      value: "30"
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

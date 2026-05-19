@@ -1,6 +1,8 @@
 package de.htwg.in.schneider.easygather.backend.controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,5 +29,12 @@ public class CategoryController {
         List<Category> categories = categoryRepository.findAll();
         LOG.info("Found {} categories", categories.size());
         return categories;
+    }
+
+    @GetMapping("/translation")
+    public Map<String, String> getCategoryTranslations() {
+        LOG.info("Fetching category translations");
+        return categoryRepository.findAll().stream()
+                .collect(Collectors.toMap(Category::getShopCategory, Category::getTitle));
     }
 }
