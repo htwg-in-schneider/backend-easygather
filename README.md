@@ -47,3 +47,12 @@ Die Anwendung startet auf **http://localhost:8081**.
 
 - `WebConfig` mit globaler CORS-Konfiguration (`config/WebConfig.java`)
 - Erlaubt dem Frontend (z. B. `http://localhost:5173` oder GitHub Pages unter `https://htwg-in-schneider.github.io/frontend-easygather/`), die Backend-APIs ohne Cross-Origin-Fehler aufzurufen
+
+### Iteration 3: Database Integration
+
+- H2-Dateidatenbank unter `target/easygather-db`, MariaDB-Treiber in `pom.xml` (für Produktion später)
+- `Product` als JPA-`@Entity` mit `equals`/`hashCode`
+- `ProductRepository` (Spring Data JPA)
+- `DataLoader` befüllt die DB beim ersten Start mit 7 EasyGather-Produkten
+- `GET /api/product` liest aus der Datenbank (`productRepository.findAll()`)
+- Test: Backend starten, `curl http://localhost:8081/api/product` – IDs werden von der DB vergeben (1, 2, 3, …)
