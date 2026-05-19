@@ -1,0 +1,22 @@
+info:
+  name: createProduct
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:8081/api/product
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Date-Korb",
+        "description": "Kleine, stilvolle Auswahl für zwei Personen."
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

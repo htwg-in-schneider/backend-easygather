@@ -28,3 +28,10 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `ProductController` mit `GET /api/product` – liefert eine Liste von Produktnamen (Strings).
 - In `application.properties`: DataSource/JPA vorerst deaktiviert (wie im Beispielprojekt).
 - Test: `curl http://localhost:8081/api/product` oder Bruno unter `src/test/bruno`.
+
+### Iteration 1b: JSON (de)serialization
+
+- `ProductController` unterstützt **GET** und **POST** auf `/api/product` mit Java-Objekten (`title`, `description`) statt Strings.
+- Test GET: `curl http://localhost:8081/api/product`
+- Test POST: `curl -X POST http://localhost:8081/api/product -H "Content-Type: application/json" -d "{\"title\":\"Date-Korb\",\"description\":\"Kleine, stilvolle Auswahl für zwei Personen.\"}"`
+- Bruno: `src/test/bruno/createProduct.yml`
