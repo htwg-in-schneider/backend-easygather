@@ -99,3 +99,14 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `GET /api/category/translation` – Map `shopCategory` → Anzeigename (für Filter-Dropdown im Frontend)
 - Mehr Beispielprodukte im `DataLoader`
 - Bruno: `getAllProductsFilterAndSearch.yml`, `getCategoryTranslation.yml`
+
+### Iteration 7: User authentication with Auth0 and Spring Security
+
+- Added `okta-spring-boot-starter` dependency in `pom.xml`
+- Auth0 configuration in `application.properties` (`okta.oauth2.issuer`, `okta.oauth2.audience`)
+- `SecurityConfig`: OAuth2 resource server; `GET /api/product` public, `POST`/`PUT`/`DELETE` on `/api/product` require authentication
+- `User` entity (`app_user` table), `Role` enum (`KUNDE`, `FAHRER`, `ADMIN`), `UserRepository`
+- `ProfileController`: `GET /api/profile` returns the logged-in user from the database (matched by JWT `sub` / `oauthId`)
+- `ProductController`: admin role check before create, update, and delete (403 for non-admins)
+- `DataLoader`: upserts three test users (Kunde, Fahrer, Admin) with Auth0 `oauthId` values
+- **After schema change:** restart backend; users are upserted on every start, products load only if DB is empty
