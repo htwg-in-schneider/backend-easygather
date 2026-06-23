@@ -1,6 +1,7 @@
 package de.htwg.in.schneider.easygather.backend.config;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +11,11 @@ import org.springframework.context.annotation.Configuration;
 
 import de.htwg.in.schneider.easygather.backend.model.Category;
 import de.htwg.in.schneider.easygather.backend.model.Product;
+import de.htwg.in.schneider.easygather.backend.model.Role;
+import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.CategoryRepository;
 import de.htwg.in.schneider.easygather.backend.repository.ProductRepository;
+import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
 
 @Configuration
 public class DataLoader {
@@ -19,8 +23,11 @@ public class DataLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataLoader.class);
 
     @Bean
-    public CommandLineRunner loadData(CategoryRepository categoryRepository, ProductRepository productRepository) {
+    public CommandLineRunner loadData(CategoryRepository categoryRepository, ProductRepository productRepository,
+            UserRepository userRepository) {
         return args -> {
+            loadInitialUsers(userRepository);
+
             if (categoryRepository.count() == 0) {
                 LOGGER.info("Database is empty. Loading initial data...");
                 loadInitialData(categoryRepository, productRepository);
@@ -28,6 +35,39 @@ public class DataLoader {
                 LOGGER.info("Database already contains data. Skipping data loading.");
             }
         };
+    }
+
+    private void loadInitialUsers(UserRepository userRepository) {
+        upsertUser(userRepository, "EasyGather Kunde", "maloku.ardonesa+kunde@gmail.com",
+                "auth0|6a3a6001ffaa52d5c9653b0f", Role.KUNDE);
+        upsertUser(userRepository, "EasyGather Fahrer", "maloku.ardonesa+fahrer@gmail.com",
+                "auth0|6a3a605699022f4b7e9c6581", Role.FAHRER);
+        upsertUser(userRepository, "EasyGather Admin", "maloku.ardonesa+admin@gmail.com",
+                "auth0|6a3a606fffaa52d5c9653b5c", Role.ADMIN);
+    }
+
+    private void upsertUser(UserRepository userRepository, String name, String email, String oauthId, Role role) {
+        Optional<User> existing = userRepository.findByOauthId(oauthId);
+        if (existing.isEmpty()) {
+            existing = userRepository.findByEmail(email);
+        }
+        if (existing.isPresent()) {
+            User user = existing.get();
+            user.setName(name);
+            user.setEmail(email);
+            user.setOauthId(oauthId);
+            user.setRole(role);
+            userRepository.save(user);
+            LOGGER.info("Updated existing {} user with email={}", role, email);
+        } else {
+            User user = new User();
+            user.setName(name);
+            user.setEmail(email);
+            user.setOauthId(oauthId);
+            user.setRole(role);
+            userRepository.save(user);
+            LOGGER.info("Created new {} user with email={}", role, email);
+        }
     }
 
     private void loadInitialData(CategoryRepository categoryRepository, ProductRepository productRepository) {
