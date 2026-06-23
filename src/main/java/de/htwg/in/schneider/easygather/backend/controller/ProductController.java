@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,8 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import de.htwg.in.schneider.easygather.backend.model.Category;
 import de.htwg.in.schneider.easygather.backend.model.Product;
+import de.htwg.in.schneider.easygather.backend.model.Role;
+import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.CategoryRepository;
 import de.htwg.in.schneider.easygather.backend.repository.ProductRepository;
+import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/product")
@@ -34,6 +39,23 @@ public class ProductController {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private boolean userFromJwtIsAdmin(Jwt jwt) {
+        if (jwt == null || jwt.getSubject() == null) {
+            LOG.warn("JWT or subject is null");
+            return false;
+        }
+        Optional<User> user = userRepository.findByOauthId(jwt.getSubject());
+        if (!user.isPresent() || user.get().getRole() != Role.ADMIN) {
+            LOG.warn("Unauthorized product mutation by {}",
+                    user.map(u -> "user with oauthId " + u.getOauthId()).orElse("unknown user"));
+            return false;
+        }
+        return true;
+    }
 
     @GetMapping
     public List<Product> getProducts(
@@ -74,7 +96,10 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+    public ResponseEntity<Product> createProduct(@AuthenticationPrincipal Jwt jwt, @RequestBody Product product) {
+        if (!userFromJwtIsAdmin(jwt)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         if (product == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -93,7 +118,11 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+    public ResponseEntity<Product> updateProduct(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @RequestBody Product productDetails) {
+        if (!userFromJwtIsAdmin(jwt)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Optional<Product> opt = productRepository.findById(id);
         if (!opt.isPresent()) {
             return ResponseEntity.notFound().build();
@@ -116,7 +145,10 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteProduct(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        if (!userFromJwtIsAdmin(jwt)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Optional<Product> opt = productRepository.findById(id);
         if (!opt.isPresent()) {
             return ResponseEntity.notFound().build();
