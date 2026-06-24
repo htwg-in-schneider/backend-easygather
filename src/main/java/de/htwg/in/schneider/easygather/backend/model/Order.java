@@ -30,6 +30,12 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column(unique = true)
+    private String orderNumber;
+
+    @Column(unique = true)
+    private Long orderNumberSequence;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonIgnore
@@ -64,6 +70,22 @@ public class Order {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getOrderNumber() {
+        return orderNumber;
+    }
+
+    public void setOrderNumber(String orderNumber) {
+        this.orderNumber = orderNumber;
+    }
+
+    public Long getOrderNumberSequence() {
+        return orderNumberSequence;
+    }
+
+    public void setOrderNumberSequence(Long orderNumberSequence) {
+        this.orderNumberSequence = orderNumberSequence;
     }
 
     public User getUser() {

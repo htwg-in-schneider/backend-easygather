@@ -135,8 +135,7 @@ Die Anwendung startet auf **http://localhost:8081**.
 - New entities `DeliveryOrder` and `DeliveryStatus` (`OFFEN`, `UNTERWEGS`, `GELIEFERT`); order linked to a FAHRER user
 - `DeliveryOrderRepository`, `DeliveryController`: `GET /api/delivery/assigned` (orders for logged-in driver), `PUT /api/delivery/{id}/status` (status update; only own orders)
 - `SecurityConfig`: `/api/delivery/**` requires authentication; controller checks `Role.FAHRER`
-- `DataLoader`: seeds three sample orders (EG-124, EG-128, EG-131) for `maloku.ardonesa+fahrer@gmail.com`
-- **Scope note:** no connection to customer orders yet — sample assignments only. Real order creation, multi-driver accept, and admin assignment are planned for later iterations.
+- Initial version used sample orders in `DataLoader` (later replaced in iteration 12)
 
 ### Iteration 11: Admin master data (categories, users, orders)
 
@@ -145,3 +144,15 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `OrderController`: `GET /api/order/admin/all` with search for admins; admin can open any order via `GET /api/order/{id}`
 - `AdminAuth` helper for shared admin role checks; `SecurityConfig`: CSRF disabled, stateless sessions, category/user endpoints authenticated
 - Category delete removes all products in that category (cascade)
+
+### Iteration 12: Driver accept workflow, order numbers and status sync
+
+- `DeliveryStatus`: `EINGEGANGEN`, `ANGENOMMEN`, `UNTERWEGS`, `GELIEFERT` (replaces `OFFEN`)
+- `DeliveryOrder` linked to `Order` via `customer_order_id` (1:1); delivery created on `POST /api/order`
+- `POST /api/delivery/{id}/accept`: first driver to accept gets the order; others receive 409
+- `GET /api/delivery/assigned` returns `DriverDashboardResponse` with `available` and `myDeliveries`
+- `PUT /api/delivery/{id}/status`: only own deliveries; transitions `ANGENOMMEN` → `UNTERWEGS` → `GELIEFERT`
+- `OrderStatus.UNTERWEGS` synced when driver sets delivery to `UNTERWEGS`; `GELIEFERT` → `ABGESCHLOSSEN`
+- `OrderNumberService`: system-wide sequential order numbers (`EG-0001`, `EG-0002`, …)
+- `DeliveryOrder.orderCreatedAt` for driver dashboard sorting
+- `H2SchemaMigration`: extends H2 ENUM columns for new statuses; `DataLoader` removes orphan sample deliveries
