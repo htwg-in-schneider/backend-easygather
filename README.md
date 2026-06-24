@@ -119,7 +119,7 @@ Die Anwendung startet auf **http://localhost:8081**.
 - Basic validation: first and last name required; address fields optional on profile (required at order checkout in frontend)
 - `DataLoader`: test users upserted with sample address data; new users can be added with `oauthId` and e-mail
 
-### Iteration 9: Order process and persistence (UC8–UC9)
+### Iteration 9: Order process and persistence
 
 - New entities `Order`, `OrderItem` with `OrderStatus` and `PaymentMethod`; fixed shipping cost **4,90 €**
 - `OrderController`:
@@ -135,12 +135,24 @@ Die Anwendung startet auf **http://localhost:8081**.
 - New entities `DeliveryOrder` and `DeliveryStatus` (`OFFEN`, `UNTERWEGS`, `GELIEFERT`); order linked to a FAHRER user
 - `DeliveryOrderRepository`, `DeliveryController`: `GET /api/delivery/assigned` (orders for logged-in driver), `PUT /api/delivery/{id}/status` (status update; only own orders)
 - `SecurityConfig`: `/api/delivery/**` requires authentication; controller checks `Role.FAHRER`
-- Initial version used sample orders in `DataLoader` (later replaced in iteration 11)
+- Initial version used sample orders in `DataLoader` (later replaced in iteration 12)
 
-### Iteration 11: Link customer orders to driver deliveries
+### Iteration 11: Admin master data (categories, users, orders)
 
-- `DeliveryOrder` linked to `Order` via `customer_order_id` (1:1)
-- `DeliveryService`: creates a delivery automatically on `POST /api/order`; backfills deliveries for existing orders on startup
-- All FAHRER users see all customer deliveries (`GET /api/delivery/assigned`)
-- Delivery status `GELIEFERT` sets linked customer order to `ABGESCHLOSSEN`
-- Order number format: `EG-0001`, address and content summary taken from the customer order
+- Extended `CategoryController`: CRUD for admins (`POST` / `PUT` / `DELETE`); `GET` returns `CategorySummary` with product count; optional search `?title=`
+- New `UserController`: `GET /api/user`, `GET /api/user/{id}`, `PUT /api/user/{id}` (admin only; role editable, no user creation)
+- `OrderController`: `GET /api/order/admin/all` with search for admins; admin can open any order via `GET /api/order/{id}`
+- `AdminAuth` helper for shared admin role checks; `SecurityConfig`: CSRF disabled, stateless sessions, category/user endpoints authenticated
+- Category delete removes all products in that category (cascade)
+
+### Iteration 12: Driver accept workflow, order numbers and status sync
+
+- `DeliveryStatus`: `EINGEGANGEN`, `ANGENOMMEN`, `UNTERWEGS`, `GELIEFERT` (replaces `OFFEN`)
+- `DeliveryOrder` linked to `Order` via `customer_order_id` (1:1); delivery created on `POST /api/order`
+- `POST /api/delivery/{id}/accept`: first driver to accept gets the order; others receive 409
+- `GET /api/delivery/assigned` returns `DriverDashboardResponse` with `available` and `myDeliveries`
+- `PUT /api/delivery/{id}/status`: only own deliveries; transitions `ANGENOMMEN` → `UNTERWEGS` → `GELIEFERT`
+- `OrderStatus.UNTERWEGS` synced when driver sets delivery to `UNTERWEGS`; `GELIEFERT` → `ABGESCHLOSSEN`
+- `OrderNumberService`: system-wide sequential order numbers (`EG-0001`, `EG-0002`, …)
+- `DeliveryOrder.orderCreatedAt` for driver dashboard sorting
+- `H2SchemaMigration`: extends H2 ENUM columns for new statuses; `DataLoader` removes orphan sample deliveries
