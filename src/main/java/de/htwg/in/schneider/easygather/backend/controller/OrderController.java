@@ -2,7 +2,9 @@ package de.htwg.in.schneider.easygather.backend.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +20,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import de.htwg.in.schneider.easygather.backend.dto.AdminOrderDetail;
+import de.htwg.in.schneider.easygather.backend.dto.AdminOrderSummary;
 import de.htwg.in.schneider.easygather.backend.dto.OrderAddressRequest;
 import de.htwg.in.schneider.easygather.backend.dto.OrderItemRequest;
 import de.htwg.in.schneider.easygather.backend.dto.OrderRequest;
@@ -32,6 +37,7 @@ import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.OrderRepository;
 import de.htwg.in.schneider.easygather.backend.repository.ProductRepository;
 import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
+import de.htwg.in.schneider.easygather.backend.util.AdminAuth;
 
 @RestController
 @RequestMapping("/api/order")
@@ -66,15 +72,38 @@ public class OrderController {
         return ResponseEntity.ok(orderRepository.findByUserOrderByCreatedAtDesc(user.get()));
     }
 
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<AdminOrderSummary>> getAllOrdersForAdmin(@AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) String q) {
+        if (!AdminAuth.isAdmin(jwt, userRepository)) {
+            return ResponseEntity.status(403).build();
+        }
+        String search = normalizeSearch(q);
+        List<AdminOrderSummary> orders = orderRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(order -> matchesOrderSearch(order, search))
+                .map(this::toAdminSummary)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(orders);
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+    public ResponseEntity<?> getOrder(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         Optional<User> user = findUser(jwt);
         if (user.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
-        return orderRepository.findByIdAndUser(id, user.get())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Optional<Order> orderOpt = orderRepository.findById(id);
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Order order = orderOpt.get();
+        if (AdminAuth.isAdmin(jwt, userRepository)) {
+            return ResponseEntity.ok(AdminOrderDetail.from(order));
+        }
+        if (!order.getUser().getId().equals(user.get().getId())) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(order);
     }
 
     @PostMapping
@@ -187,6 +216,53 @@ public class OrderController {
 
     private double roundMoney(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private AdminOrderSummary toAdminSummary(Order order) {
+        User customer = order.getUser();
+        String firstName = customer != null ? customer.getFirstName() : "";
+        String lastName = customer != null ? customer.getLastName() : "";
+        String email = customer != null ? customer.getEmail() : "";
+        return new AdminOrderSummary(
+                order.getId(),
+                order.getCreatedAt(),
+                order.getStatus(),
+                order.getPaymentMethod(),
+                order.getTotal(),
+                firstName,
+                lastName,
+                email);
+    }
+
+    private boolean matchesOrderSearch(Order order, String search) {
+        if (search == null) {
+            return true;
+        }
+        String lower = search.toLowerCase(Locale.ROOT);
+        if (String.valueOf(order.getId()).contains(lower)) {
+            return true;
+        }
+        if (order.getStatus() != null && order.getStatus().name().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        User customer = order.getUser();
+        if (customer == null) {
+            return false;
+        }
+        return containsIgnoreCase(customer.getFirstName(), lower)
+                || containsIgnoreCase(customer.getLastName(), lower)
+                || containsIgnoreCase(customer.getEmail(), lower);
+    }
+
+    private boolean containsIgnoreCase(String value, String lowerSearch) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(lowerSearch);
+    }
+
+    private String normalizeSearch(String q) {
+        if (q == null || q.isBlank()) {
+            return null;
+        }
+        return q.trim();
     }
 
     private void sendOrderEmail(User user, Order order) {
