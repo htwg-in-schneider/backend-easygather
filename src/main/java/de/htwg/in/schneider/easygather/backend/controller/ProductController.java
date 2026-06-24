@@ -108,10 +108,15 @@ public class ProductController {
             LOG.warn(
                     "Attempted to create a product with an existing ID. ID has been set to null to create a new product.");
         }
+        if (!isValidProductFields(product)) {
+            LOG.warn("Invalid product data on create");
+            return ResponseEntity.badRequest().build();
+        }
         ResponseEntity<Product> categoryError = resolveCategory(product);
         if (categoryError != null) {
             return categoryError;
         }
+        product.setTitle(product.getTitle().trim());
         Product newProduct = productRepository.save(product);
         LOG.info("Created new product with id {}", newProduct.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
@@ -128,6 +133,10 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
         Product product = opt.get();
+        if (!isValidProductFields(productDetails)) {
+            LOG.warn("Invalid product data on update for id {}", id);
+            return ResponseEntity.badRequest().build();
+        }
         if (productDetails.getCategory() != null) {
             ResponseEntity<Product> categoryError = resolveCategory(productDetails);
             if (categoryError != null) {
@@ -138,7 +147,7 @@ public class ProductController {
         product.setDescription(productDetails.getDescription());
         product.setImageUrl(productDetails.getImageUrl());
         product.setPrice(productDetails.getPrice());
-        product.setTitle(productDetails.getTitle());
+        product.setTitle(productDetails.getTitle().trim());
         Product updatedProduct = productRepository.save(product);
         LOG.info("Updated product with id {}", updatedProduct.getId());
         return ResponseEntity.ok(updatedProduct);
@@ -173,6 +182,11 @@ public class ProductController {
             return null;
         }
         return name.trim();
+    }
+
+    private boolean isValidProductFields(Product product) {
+        return product.getTitle() != null && !product.getTitle().isBlank()
+                && product.getPrice() != null && product.getPrice() >= 0;
     }
 
     private ResponseEntity<Product> resolveCategory(Product product) {
