@@ -118,3 +118,11 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `ProfileController`: `PUT /api/profile` updates the logged-in user's name and address (email and role stay unchanged)
 - Basic validation: all profile fields required and non-blank
 - `DataLoader`: test users upserted with sample address data
+
+### Iteration 9: Delivery orders API for drivers (sample data)
+
+- New entities `DeliveryOrder` and `DeliveryStatus` (`OFFEN`, `UNTERWEGS`, `GELIEFERT`); order linked to a FAHRER user
+- `DeliveryOrderRepository`, `DeliveryController`: `GET /api/delivery/assigned` (orders for logged-in driver), `PUT /api/delivery/{id}/status` (status update; only own orders)
+- `SecurityConfig`: `/api/delivery/**` requires authentication; controller checks `Role.FAHRER`
+- `DataLoader`: seeds three sample orders (EG-124, EG-128, EG-131) for `maloku.ardonesa+fahrer@gmail.com`
+- **Scope note:** no connection to customer orders yet — sample assignments only. Real order creation, multi-driver accept, and admin assignment are planned for later iterations.
