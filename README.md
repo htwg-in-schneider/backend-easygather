@@ -110,3 +110,11 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `ProductController`: admin role check before create, update, and delete (403 for non-admins)
 - `DataLoader`: upserts three test users (Kunde, Fahrer, Admin) with Auth0 `oauthId` values
 - **After schema change:** restart backend; users are upserted on every start, products load only if DB is empty
+
+### Iteration 8: User profile update
+
+- Extended `User` entity with `firstName`, `lastName`, `street`, `postalCode`, and `city` (replaces single `name` field)
+- New `ProfileUpdateRequest` DTO for profile updates
+- `ProfileController`: `PUT /api/profile` updates the logged-in user's name and address (email and role stay unchanged)
+- Basic validation: all profile fields required and non-blank
+- `DataLoader`: test users upserted with sample address data
