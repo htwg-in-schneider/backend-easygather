@@ -10,15 +10,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import de.htwg.in.schneider.easygather.backend.model.Category;
-import de.htwg.in.schneider.easygather.backend.model.DeliveryOrder;
-import de.htwg.in.schneider.easygather.backend.model.DeliveryStatus;
+import de.htwg.in.schneider.easygather.backend.model.Order;
 import de.htwg.in.schneider.easygather.backend.model.Product;
 import de.htwg.in.schneider.easygather.backend.model.Role;
 import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.CategoryRepository;
-import de.htwg.in.schneider.easygather.backend.repository.DeliveryOrderRepository;
+import de.htwg.in.schneider.easygather.backend.repository.OrderRepository;
 import de.htwg.in.schneider.easygather.backend.repository.ProductRepository;
 import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
+import de.htwg.in.schneider.easygather.backend.service.DeliveryService;
+import de.htwg.in.schneider.easygather.backend.service.OrderNumberService;
 
 @Configuration
 public class DataLoader {
@@ -27,10 +28,14 @@ public class DataLoader {
 
     @Bean
     public CommandLineRunner loadData(CategoryRepository categoryRepository, ProductRepository productRepository,
-            UserRepository userRepository, DeliveryOrderRepository deliveryOrderRepository) {
+            UserRepository userRepository, OrderRepository orderRepository, DeliveryService deliveryService,
+            OrderNumberService orderNumberService) {
         return args -> {
             loadInitialUsers(userRepository);
-            loadInitialDeliveries(userRepository, deliveryOrderRepository);
+            orderNumberService.backfillMissingOrderNumbers();
+            deliveryService.removeOrphanDeliveries();
+            deliveryService.syncDeliveryOrderNumbersFromCustomerOrders();
+            syncDeliveriesFromExistingOrders(orderRepository, deliveryService);
 
             if (categoryRepository.count() == 0) {
                 LOGGER.info("Database is empty. Loading initial data...");
@@ -39,6 +44,12 @@ public class DataLoader {
                 LOGGER.info("Database already contains data. Skipping data loading.");
             }
         };
+    }
+
+    private void syncDeliveriesFromExistingOrders(OrderRepository orderRepository, DeliveryService deliveryService) {
+        for (Order order : orderRepository.findAllWithItems()) {
+            deliveryService.createFromOrder(order);
+        }
     }
 
     private void loadInitialUsers(UserRepository userRepository) {
@@ -83,42 +94,6 @@ public class DataLoader {
             userRepository.save(user);
             LOGGER.info("Created new {} user with email={}", role, email);
         }
-    }
-
-    private void loadInitialDeliveries(UserRepository userRepository, DeliveryOrderRepository deliveryOrderRepository) {
-        Optional<User> driver = userRepository.findByEmail("maloku.ardonesa+fahrer@gmail.com");
-        if (driver.isEmpty()) {
-            LOGGER.warn("FAHRER user not found – skipping delivery seed data");
-            return;
-        }
-        if (deliveryOrderRepository.countByDriverId(driver.get().getId()) > 0) {
-            LOGGER.info("Delivery orders already exist for driver – skipping seed data");
-            return;
-        }
-
-        DeliveryOrder order1 = new DeliveryOrder();
-        order1.setOrderNumber("EG-124");
-        order1.setDeliveryAddress("Rheinstrasse 14, 78462 Konstanz");
-        order1.setContentSummary("Date-Korb, Zitronenlimonade 2x");
-        order1.setStatus(DeliveryStatus.UNTERWEGS);
-        order1.setDriver(driver.get());
-
-        DeliveryOrder order2 = new DeliveryOrder();
-        order2.setOrderNumber("EG-128");
-        order2.setDeliveryAddress("Friedrichstrasse 5, 78464 Konstanz");
-        order2.setContentSummary("Familienpicknick, Fruchtbox saisonal");
-        order2.setStatus(DeliveryStatus.OFFEN);
-        order2.setDriver(driver.get());
-
-        DeliveryOrder order3 = new DeliveryOrder();
-        order3.setOrderNumber("EG-131");
-        order3.setDeliveryAddress("Bodanstrasse 22, 78462 Konstanz");
-        order3.setContentSummary("Standard-Korb, Dessert-Duo, Picknick-Set Basic");
-        order3.setStatus(DeliveryStatus.GELIEFERT);
-        order3.setDriver(driver.get());
-
-        deliveryOrderRepository.saveAll(Arrays.asList(order1, order2, order3));
-        LOGGER.info("Loaded {} delivery orders for FAHRER", 3);
     }
 
     private void loadInitialData(CategoryRepository categoryRepository, ProductRepository productRepository) {

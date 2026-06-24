@@ -32,6 +32,8 @@ import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.OrderRepository;
 import de.htwg.in.schneider.easygather.backend.repository.ProductRepository;
 import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
+import de.htwg.in.schneider.easygather.backend.service.DeliveryService;
+import de.htwg.in.schneider.easygather.backend.service.OrderNumberService;
 
 @RestController
 @RequestMapping("/api/order")
@@ -53,6 +55,12 @@ public class OrderController {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private DeliveryService deliveryService;
+
+    @Autowired
+    private OrderNumberService orderNumberService;
 
     @Autowired(required = false)
     private JavaMailSender emailSender;
@@ -147,7 +155,9 @@ public class OrderController {
         order.setDiscountAmount(discountAmount);
         order.setTotal(roundMoney(subtotal - discountAmount + SHIPPING_COST));
 
+        orderNumberService.assignNextOrderNumber(order);
         Order savedOrder = orderRepository.save(order);
+        deliveryService.createFromOrder(savedOrder);
         sendOrderEmail(user, savedOrder);
 
         return ResponseEntity.ok(savedOrder);
@@ -199,7 +209,7 @@ public class OrderController {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("EasyGather <" + mailSenderUsername + ">");
             message.setTo(user.getEmail());
-            message.setSubject("Ihre EasyGather Bestellbestätigung #" + order.getId());
+            message.setSubject("Ihre EasyGather Bestellbestätigung " + order.getOrderNumber());
             message.setText(buildReceiptText(user, order));
             emailSender.send(message);
             LOG.info("Order receipt sent to {} for order id={}", user.getEmail(), order.getId());
@@ -215,7 +225,7 @@ public class OrderController {
             receipt.append(", ").append(user.getFirstName());
         }
         receipt.append("!\n\n");
-        receipt.append("Bestellnummer: #").append(order.getId()).append("\n");
+        receipt.append("Bestellnummer: ").append(order.getOrderNumber()).append("\n");
         receipt.append("Status: ").append(order.getStatus()).append("\n");
         receipt.append("Zahlungsart: ").append(order.getPaymentMethod()).append("\n\n");
         receipt.append("Lieferadresse:\n");
