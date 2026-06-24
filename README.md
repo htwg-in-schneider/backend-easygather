@@ -129,3 +129,11 @@ Die Anwendung startet auf **http://localhost:8081**.
 - Coupon code **EASY10** in order request: 10 % discount on subtotal
 - `SecurityConfig`: `/api/order` requires authentication
 - `ProfileController`: auto-link or create user on first profile access by JWT `sub` / e-mail (test users with roles still via `DataLoader`)
+
+### Iteration 10: Delivery orders API for drivers (sample data)
+
+- New entities `DeliveryOrder` and `DeliveryStatus` (`OFFEN`, `UNTERWEGS`, `GELIEFERT`); order linked to a FAHRER user
+- `DeliveryOrderRepository`, `DeliveryController`: `GET /api/delivery/assigned` (orders for logged-in driver), `PUT /api/delivery/{id}/status` (status update; only own orders)
+- `SecurityConfig`: `/api/delivery/**` requires authentication; controller checks `Role.FAHRER`
+- `DataLoader`: seeds three sample orders (EG-124, EG-128, EG-131) for `maloku.ardonesa+fahrer@gmail.com`
+- **Scope note:** no connection to customer orders yet — sample assignments only. Real order creation, multi-driver accept, and admin assignment are planned for later iterations.
