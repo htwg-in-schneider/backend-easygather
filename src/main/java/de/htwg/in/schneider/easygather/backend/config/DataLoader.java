@@ -46,6 +46,8 @@ public class DataLoader {
                 "maloku.ardonesa+kunde@gmail.com", "auth0|6a3a6001ffaa52d5c9653b0f", Role.KUNDE);
         upsertUser(userRepository, "Lea", "Fahrer", "Alfred-Wachtel-Straße 8", "78462", "Konstanz",
                 "maloku.ardonesa+fahrer@gmail.com", "auth0|6a3a605699022f4b7e9c6581", Role.FAHRER);
+        upsertUser(userRepository, "Tom", "Fahrer", "Alfred-Wachtel-Straße 8", "78462", "Konstanz",
+                "maloku.ardonesa+fahrer2@gmail.com", "auth0|6a3c0fcebda5fa3340b5031c", Role.FAHRER);
         upsertUser(userRepository, "Admin", "EasyGather", "Alfred-Wachtel-Straße 8", "78462", "Konstanz",
                 "maloku.ardonesa+admin@gmail.com", "auth0|6a3a606fffaa52d5c9653b5c", Role.ADMIN);
     }

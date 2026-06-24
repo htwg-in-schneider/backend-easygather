@@ -116,8 +116,19 @@ Die Anwendung startet auf **http://localhost:8081**.
 - Extended `User` entity with `firstName`, `lastName`, `street`, `postalCode`, and `city` (replaces single `name` field)
 - New `ProfileUpdateRequest` DTO for profile updates
 - `ProfileController`: `PUT /api/profile` updates the logged-in user's name and address (email and role stay unchanged)
-- Basic validation: all profile fields required and non-blank
-- `DataLoader`: test users upserted with sample address data
+- Basic validation: first and last name required; address fields optional on profile (required at order checkout in frontend)
+- `DataLoader`: test users upserted with sample address data; new users can be added with `oauthId` and e-mail
+
+### Iteration 9: Order process and persistence (UC8–UC9)
+
+- New entities `Order`, `OrderItem` with `OrderStatus` and `PaymentMethod`; fixed shipping cost **4,90 €**
+- `OrderController`:
+  - `POST /api/order` – create order for logged-in user (items, delivery address, payment method); persists to DB
+  - `GET /api/order` – list own orders; `GET /api/order/{id}` – single order
+- Optional order confirmation e-mail via Spring Mail (`SPRING_MAIL_USERNAME` / `SPRING_MAIL_PASSWORD`); order is saved even if mail is not configured
+- Coupon code **EASY10** in order request: 10 % discount on subtotal
+- `SecurityConfig`: `/api/order` requires authentication
+- `ProfileController`: auto-link or create user on first profile access by JWT `sub` / e-mail (test users with roles still via `DataLoader`)
 
 ### Iteration 10: Delivery orders API for drivers (sample data)
 
