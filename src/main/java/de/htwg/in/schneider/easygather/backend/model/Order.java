@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,7 +47,8 @@ public class Order {
 
     private double subtotal;
     private double shippingCost;
-    private double discountAmount;
+    @Column(nullable = true)
+    private Double discountAmount;
     private String couponCode;
     private double total;
 
@@ -129,7 +131,7 @@ public class Order {
     }
 
     public double getDiscountAmount() {
-        return discountAmount;
+        return discountAmount != null ? discountAmount : 0.0;
     }
 
     public void setDiscountAmount(double discountAmount) {
