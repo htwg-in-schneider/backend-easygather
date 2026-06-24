@@ -119,7 +119,7 @@ Die Anwendung startet auf **http://localhost:8081**.
 - Basic validation: all profile fields required and non-blank
 - `DataLoader`: test users upserted with sample address data
 
-### Iteration 9: Delivery orders API for drivers (sample data)
+### Iteration 10: Delivery orders API for drivers (sample data)
 
 - New entities `DeliveryOrder` and `DeliveryStatus` (`OFFEN`, `UNTERWEGS`, `GELIEFERT`); order linked to a FAHRER user
 - `DeliveryOrderRepository`, `DeliveryController`: `GET /api/delivery/assigned` (orders for logged-in driver), `PUT /api/delivery/{id}/status` (status update; only own orders)
