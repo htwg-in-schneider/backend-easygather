@@ -119,7 +119,7 @@ Die Anwendung startet auf **http://localhost:8081**.
 - Basic validation: first and last name required; address fields optional on profile (required at order checkout in frontend)
 - `DataLoader`: test users upserted with sample address data; new users can be added with `oauthId` and e-mail
 
-### Iteration 9: Order process and persistence (UC8–UC9)
+### Iteration 9: Order process and persistence
 
 - New entities `Order`, `OrderItem` with `OrderStatus` and `PaymentMethod`; fixed shipping cost **4,90 €**
 - `OrderController`:
@@ -137,3 +137,11 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `SecurityConfig`: `/api/delivery/**` requires authentication; controller checks `Role.FAHRER`
 - `DataLoader`: seeds three sample orders (EG-124, EG-128, EG-131) for `maloku.ardonesa+fahrer@gmail.com`
 - **Scope note:** no connection to customer orders yet — sample assignments only. Real order creation, multi-driver accept, and admin assignment are planned for later iterations.
+
+### Iteration 11: Admin master data (categories, users, orders)
+
+- Extended `CategoryController`: CRUD for admins (`POST` / `PUT` / `DELETE`); `GET` returns `CategorySummary` with product count; optional search `?title=`
+- New `UserController`: `GET /api/user`, `GET /api/user/{id}`, `PUT /api/user/{id}` (admin only; role editable, no user creation)
+- `OrderController`: `GET /api/order/admin/all` with search for admins; admin can open any order via `GET /api/order/{id}`
+- `AdminAuth` helper for shared admin role checks; `SecurityConfig`: CSRF disabled, stateless sessions, category/user endpoints authenticated
+- Category delete removes all products in that category (cascade)
