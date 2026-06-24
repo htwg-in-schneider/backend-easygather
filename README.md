@@ -156,3 +156,13 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `OrderNumberService`: system-wide sequential order numbers (`EG-0001`, `EG-0002`, …)
 - `DeliveryOrder.orderCreatedAt` for driver dashboard sorting
 - `H2SchemaMigration`: extends H2 ENUM columns for new statuses; `DataLoader` removes orphan sample deliveries
+
+### Iteration 13: Deploy to production (Blatt 5g)
+
+- `Dockerfile` for deployment on [render.com](https://render.com) (Web Service, **Region Frankfurt / EU Central**)
+- `server.port=${PORT:8081}` so Render can inject its port
+- MariaDB via environment variables (`SPRING_DATASOURCE_URL`, driver, username, password) — never commit passwords
+- `DataLoader` seeds categories, products, and test users when the database is empty
+- `.github/workflows/verify.yml`: Maven build verification on push/PR
+- **Live API:** `https://easygather-backend.onrender.com`
+- **Note:** outgoing SMTP is blocked on Render; order confirmation e-mails do not work in production (orders are still saved)
