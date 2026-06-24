@@ -135,5 +135,12 @@ Die Anwendung startet auf **http://localhost:8081**.
 - New entities `DeliveryOrder` and `DeliveryStatus` (`OFFEN`, `UNTERWEGS`, `GELIEFERT`); order linked to a FAHRER user
 - `DeliveryOrderRepository`, `DeliveryController`: `GET /api/delivery/assigned` (orders for logged-in driver), `PUT /api/delivery/{id}/status` (status update; only own orders)
 - `SecurityConfig`: `/api/delivery/**` requires authentication; controller checks `Role.FAHRER`
-- `DataLoader`: seeds three sample orders (EG-124, EG-128, EG-131) for `maloku.ardonesa+fahrer@gmail.com`
-- **Scope note:** no connection to customer orders yet — sample assignments only. Real order creation, multi-driver accept, and admin assignment are planned for later iterations.
+- Initial version used sample orders in `DataLoader` (later replaced in iteration 11)
+
+### Iteration 11: Link customer orders to driver deliveries
+
+- `DeliveryOrder` linked to `Order` via `customer_order_id` (1:1)
+- `DeliveryService`: creates a delivery automatically on `POST /api/order`; backfills deliveries for existing orders on startup
+- All FAHRER users see all customer deliveries (`GET /api/delivery/assigned`)
+- Delivery status `GELIEFERT` sets linked customer order to `ABGESCHLOSSEN`
+- Order number format: `EG-0001`, address and content summary taken from the customer order

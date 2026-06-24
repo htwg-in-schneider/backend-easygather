@@ -1,7 +1,8 @@
 package de.htwg.in.schneider.easygather.backend.model;
 
 public enum DeliveryStatus {
-    OFFEN,
+    EINGEGANGEN,
+    ANGENOMMEN,
     UNTERWEGS,
     GELIEFERT
 }
