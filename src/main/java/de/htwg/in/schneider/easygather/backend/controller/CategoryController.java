@@ -85,6 +85,7 @@ public class CategoryController {
         Category category = new Category();
         category.setTitle(request.getTitle().trim());
         category.setShopCategory(shopCategory);
+        category.setImageUrl(normalizeImageUrl(request.getImageUrl()));
         Category saved = categoryRepository.save(category);
         LOG.info("Created category id={}", saved.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(toSummary(saved));
@@ -111,6 +112,7 @@ public class CategoryController {
         Category category = opt.get();
         category.setTitle(request.getTitle().trim());
         category.setShopCategory(shopCategory);
+        category.setImageUrl(normalizeImageUrl(request.getImageUrl()));
         Category saved = categoryRepository.save(category);
         LOG.info("Updated category id={}", saved.getId());
         return ResponseEntity.ok(toSummary(saved));
@@ -138,7 +140,15 @@ public class CategoryController {
 
     private CategorySummary toSummary(Category category) {
         long productCount = productRepository.countByCategoryId(category.getId());
-        return new CategorySummary(category.getId(), category.getTitle(), category.getShopCategory(), productCount);
+        return new CategorySummary(category.getId(), category.getTitle(), category.getShopCategory(),
+                productCount, category.getImageUrl());
+    }
+
+    private String normalizeImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+        return imageUrl.trim();
     }
 
     private boolean matchesSearch(Category category, String search) {

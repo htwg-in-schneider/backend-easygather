@@ -4,6 +4,8 @@ package de.htwg.in.schneider.easygather.backend.service;
 
 import java.util.List;
 
+import java.util.Locale;
+
 import java.util.Optional;
 
 
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 
+import de.htwg.in.schneider.easygather.backend.dto.AdminDeliverySummary;
+
 import de.htwg.in.schneider.easygather.backend.dto.DriverDashboardResponse;
 
 import de.htwg.in.schneider.easygather.backend.model.DeliveryOrder;
@@ -32,11 +36,15 @@ import de.htwg.in.schneider.easygather.backend.model.OrderItem;
 
 import de.htwg.in.schneider.easygather.backend.model.OrderStatus;
 
+import de.htwg.in.schneider.easygather.backend.model.Role;
+
 import de.htwg.in.schneider.easygather.backend.model.User;
 
 import de.htwg.in.schneider.easygather.backend.repository.DeliveryOrderRepository;
 
 import de.htwg.in.schneider.easygather.backend.repository.OrderRepository;
+
+import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
 
 
 
@@ -55,6 +63,12 @@ public class DeliveryService {
     @Autowired
 
     private OrderRepository orderRepository;
+
+
+
+    @Autowired
+
+    private UserRepository userRepository;
 
 
 
@@ -127,6 +141,118 @@ public class DeliveryService {
                 .findByDriverAndCustomerOrderIsNotNullOrderByOrderCreatedAtDesc(driver);
 
         return new DriverDashboardResponse(available, myDeliveries);
+
+    }
+
+
+
+    @Transactional(readOnly = true)
+
+    public List<AdminDeliverySummary> getAllForAdmin(String search) {
+
+        String normalizedSearch = normalizeSearch(search);
+
+        return deliveryOrderRepository.findByCustomerOrderIsNotNullOrderByOrderCreatedAtDesc().stream()
+
+                .filter(delivery -> matchesAdminSearch(delivery, normalizedSearch))
+
+                .map(AdminDeliverySummary::from)
+
+                .collect(Collectors.toList());
+
+    }
+
+
+
+    @Transactional
+
+    public AdminDeliverySummary assignDriverByAdmin(Long deliveryId, Long driverId) {
+
+        DeliveryOrder delivery = deliveryOrderRepository.findByIdAndCustomerOrderIsNotNull(deliveryId)
+
+                .orElseThrow(() -> new IllegalArgumentException("Delivery not found: " + deliveryId));
+
+        if (delivery.getStatus() == DeliveryStatus.GELIEFERT) {
+
+            throw new IllegalStateException("Delivered orders cannot be reassigned");
+
+        }
+
+        if (driverId == null) {
+
+            throw new IllegalArgumentException("Driver id is required");
+
+        }
+
+        User driver = userRepository.findById(driverId)
+
+                .orElseThrow(() -> new IllegalArgumentException("Driver not found: " + driverId));
+
+        if (driver.getRole() != Role.FAHRER) {
+
+            throw new IllegalArgumentException("User is not a driver");
+
+        }
+
+        delivery.setDriver(driver);
+
+        if (delivery.getStatus() == DeliveryStatus.EINGEGANGEN) {
+
+            delivery.setStatus(DeliveryStatus.ANGENOMMEN);
+
+        }
+
+        DeliveryOrder saved = deliveryOrderRepository.save(delivery);
+
+        syncCustomerOrderStatus(saved, saved.getStatus());
+
+        return AdminDeliverySummary.from(saved);
+
+    }
+
+
+
+    @Transactional
+
+    public AdminDeliverySummary unassignDriverByAdmin(Long deliveryId) {
+
+        DeliveryOrder delivery = deliveryOrderRepository.findByIdAndCustomerOrderIsNotNull(deliveryId)
+
+                .orElseThrow(() -> new IllegalArgumentException("Delivery not found: " + deliveryId));
+
+        if (delivery.getStatus() == DeliveryStatus.GELIEFERT) {
+
+            throw new IllegalStateException("Delivered orders cannot be unassigned");
+
+        }
+
+        if (delivery.getStatus() == DeliveryStatus.UNTERWEGS) {
+
+            throw new IllegalStateException("Orders in transit cannot be unassigned");
+
+        }
+
+        delivery.setDriver(null);
+
+        delivery.setStatus(DeliveryStatus.EINGEGANGEN);
+
+        DeliveryOrder saved = deliveryOrderRepository.save(delivery);
+
+        syncCustomerOrderStatus(saved, saved.getStatus());
+
+        return AdminDeliverySummary.from(saved);
+
+    }
+
+
+
+    @Transactional(readOnly = true)
+
+    public Optional<AdminDeliverySummary> findSummaryByOrderId(Long orderId) {
+
+        return deliveryOrderRepository.findByCustomerOrderId(orderId)
+
+                .map(AdminDeliverySummary::from);
 
     }
 
@@ -365,6 +491,66 @@ public class DeliveryService {
         }
 
         return item.getProductTitle();
+
+    }
+
+
+
+    private String normalizeSearch(String search) {
+
+        if (search == null || search.isBlank()) {
+
+            return null;
+
+        }
+
+        return search.trim().toLowerCase(Locale.ROOT);
+
+    }
+
+
+
+    private boolean matchesAdminSearch(DeliveryOrder delivery, String search) {
+
+        if (search == null) {
+
+            return true;
+
+        }
+
+        if (containsIgnoreCase(delivery.getOrderNumber(), search)
+
+                || containsIgnoreCase(delivery.getDeliveryAddress(), search)
+
+                || containsIgnoreCase(delivery.getContentSummary(), search)
+
+                || containsIgnoreCase(delivery.getStatus() != null ? delivery.getStatus().name() : null, search)) {
+
+            return true;
+
+        }
+
+        User driver = delivery.getDriver();
+
+        if (driver != null) {
+
+            return containsIgnoreCase(driver.getFirstName(), search)
+
+                    || containsIgnoreCase(driver.getLastName(), search)
+
+                    || containsIgnoreCase(driver.getEmail(), search);
+
+        }
+
+        return false;
+
+    }
+
+
+
+    private boolean containsIgnoreCase(String value, String lowerSearch) {
+
+        return value != null && value.toLowerCase(Locale.ROOT).contains(lowerSearch);
 
     }
 

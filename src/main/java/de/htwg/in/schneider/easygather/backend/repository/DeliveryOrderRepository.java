@@ -25,4 +25,6 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
     boolean existsByCustomerOrderId(Long customerOrderId);
 
     Optional<DeliveryOrder> findByIdAndCustomerOrderIsNotNull(Long id);
+
+    List<DeliveryOrder> findByCustomerOrderIsNotNullOrderByOrderCreatedAtDesc();
 }

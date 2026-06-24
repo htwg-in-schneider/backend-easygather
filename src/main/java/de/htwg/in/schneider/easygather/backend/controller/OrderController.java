@@ -106,7 +106,8 @@ public class OrderController {
         }
         Order order = orderOpt.get();
         if (AdminAuth.isAdmin(jwt, userRepository)) {
-            return ResponseEntity.ok(AdminOrderDetail.from(order));
+            return ResponseEntity.ok(AdminOrderDetail.from(order,
+                    deliveryService.findSummaryByOrderId(order.getId()).orElse(null)));
         }
         if (!order.getUser().getId().equals(user.get().getId())) {
             return ResponseEntity.notFound().build();
@@ -235,6 +236,7 @@ public class OrderController {
         String email = customer != null ? customer.getEmail() : "";
         return new AdminOrderSummary(
                 order.getId(),
+                order.getOrderNumber(),
                 order.getCreatedAt(),
                 order.getStatus(),
                 order.getPaymentMethod(),
@@ -252,6 +254,9 @@ public class OrderController {
         if (String.valueOf(order.getId()).contains(lower)) {
             return true;
         }
+        if (containsIgnoreCase(order.getOrderNumber(), lower)) {
+            return true;
+        }
         if (order.getStatus() != null && order.getStatus().name().toLowerCase(Locale.ROOT).contains(lower)) {
             return true;
         }
@@ -259,9 +264,26 @@ public class OrderController {
         if (customer == null) {
             return false;
         }
+        String fullName = buildCustomerName(customer).toLowerCase(Locale.ROOT);
+        if (fullName.contains(lower)) {
+            return true;
+        }
+        String[] tokens = lower.split("\\s+");
+        if (tokens.length > 1) {
+            return java.util.Arrays.stream(tokens)
+                    .filter(token -> !token.isBlank())
+                    .allMatch(token -> fullName.contains(token)
+                            || containsIgnoreCase(customer.getEmail(), token));
+        }
         return containsIgnoreCase(customer.getFirstName(), lower)
                 || containsIgnoreCase(customer.getLastName(), lower)
                 || containsIgnoreCase(customer.getEmail(), lower);
+    }
+
+    private String buildCustomerName(User customer) {
+        String firstName = customer.getFirstName() == null ? "" : customer.getFirstName().trim();
+        String lastName = customer.getLastName() == null ? "" : customer.getLastName().trim();
+        return (firstName + " " + lastName).trim();
     }
 
     private boolean containsIgnoreCase(String value, String lowerSearch) {

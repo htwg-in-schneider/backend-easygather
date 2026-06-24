@@ -37,15 +37,18 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<List<User>> getUsers(@AuthenticationPrincipal Jwt jwt,
-            @RequestParam(required = false) String q) {
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String role) {
         if (!AdminAuth.isAdmin(jwt, userRepository)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         String search = normalizeSearch(q);
+        Role roleFilter = parseRoleFilter(role);
         List<User> users = userRepository.findAll().stream()
+                .filter(user -> matchesRole(user, roleFilter))
                 .filter(user -> matchesSearch(user, search))
                 .collect(Collectors.toList());
-        LOG.info("Returning {} users for admin search q={}", users.size(), search);
+        LOG.info("Returning {} users for admin search q={} role={}", users.size(), search, roleFilter);
         return ResponseEntity.ok(users);
     }
 
@@ -115,9 +118,61 @@ public class UserController {
             return true;
         }
         String lower = search.toLowerCase(Locale.ROOT);
+        String fullName = buildFullName(user).toLowerCase(Locale.ROOT);
+        if (fullName.contains(lower)) {
+            return true;
+        }
+        if (matchesRoleLabel(user, lower)) {
+            return true;
+        }
+        String[] tokens = lower.split("\\s+");
+        if (tokens.length > 1) {
+            return java.util.Arrays.stream(tokens)
+                    .filter(token -> !token.isBlank())
+                    .allMatch(token -> matchesUserToken(user, token, fullName));
+        }
         return containsIgnoreCase(user.getFirstName(), lower)
                 || containsIgnoreCase(user.getLastName(), lower)
-                || containsIgnoreCase(user.getEmail(), lower);
+                || containsIgnoreCase(user.getEmail(), lower)
+                || matchesRoleLabel(user, lower);
+    }
+
+    private String buildFullName(User user) {
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+        return (firstName + " " + lastName).trim();
+    }
+
+    private boolean matchesUserToken(User user, String token, String fullName) {
+        return fullName.contains(token)
+                || containsIgnoreCase(user.getEmail(), token)
+                || matchesRoleLabel(user, token);
+    }
+
+    private boolean matchesRoleLabel(User user, String token) {
+        if (user.getRole() == null || token == null || token.isBlank()) {
+            return false;
+        }
+        return switch (user.getRole()) {
+            case KUNDE -> token.equals("kunde") || token.equals("kunden") || token.equals("customer");
+            case FAHRER -> token.equals("fahrer") || token.equals("fahrerin");
+            case ADMIN -> token.equals("admin") || token.equals("administrator") || token.equals("administratoren");
+        };
+    }
+
+    private Role parseRoleFilter(String role) {
+        if (role == null || role.isBlank()) {
+            return null;
+        }
+        try {
+            return Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private boolean matchesRole(User user, Role roleFilter) {
+        return roleFilter == null || user.getRole() == roleFilter;
     }
 
     private boolean containsIgnoreCase(String value, String lowerSearch) {
