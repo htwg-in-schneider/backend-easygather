@@ -38,22 +38,27 @@ public class DataLoader {
     }
 
     private void loadInitialUsers(UserRepository userRepository) {
-        upsertUser(userRepository, "EasyGather Kunde", "maloku.ardonesa+kunde@gmail.com",
-                "auth0|6a3a6001ffaa52d5c9653b0f", Role.KUNDE);
-        upsertUser(userRepository, "EasyGather Fahrer", "maloku.ardonesa+fahrer@gmail.com",
-                "auth0|6a3a605699022f4b7e9c6581", Role.FAHRER);
-        upsertUser(userRepository, "EasyGather Admin", "maloku.ardonesa+admin@gmail.com",
-                "auth0|6a3a606fffaa52d5c9653b5c", Role.ADMIN);
+        upsertUser(userRepository, "Max", "Kunde", "Alfred-Wachtel-Straße 8", "78462", "Konstanz",
+                "maloku.ardonesa+kunde@gmail.com", "auth0|6a3a6001ffaa52d5c9653b0f", Role.KUNDE);
+        upsertUser(userRepository, "Lea", "Fahrer", "Alfred-Wachtel-Straße 8", "78462", "Konstanz",
+                "maloku.ardonesa+fahrer@gmail.com", "auth0|6a3a605699022f4b7e9c6581", Role.FAHRER);
+        upsertUser(userRepository, "Admin", "EasyGather", "Alfred-Wachtel-Straße 8", "78462", "Konstanz",
+                "maloku.ardonesa+admin@gmail.com", "auth0|6a3a606fffaa52d5c9653b5c", Role.ADMIN);
     }
 
-    private void upsertUser(UserRepository userRepository, String name, String email, String oauthId, Role role) {
+    private void upsertUser(UserRepository userRepository, String firstName, String lastName, String street,
+            String postalCode, String city, String email, String oauthId, Role role) {
         Optional<User> existing = userRepository.findByOauthId(oauthId);
         if (existing.isEmpty()) {
             existing = userRepository.findByEmail(email);
         }
         if (existing.isPresent()) {
             User user = existing.get();
-            user.setName(name);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setStreet(street);
+            user.setPostalCode(postalCode);
+            user.setCity(city);
             user.setEmail(email);
             user.setOauthId(oauthId);
             user.setRole(role);
@@ -61,7 +66,11 @@ public class DataLoader {
             LOGGER.info("Updated existing {} user with email={}", role, email);
         } else {
             User user = new User();
-            user.setName(name);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setStreet(street);
+            user.setPostalCode(postalCode);
+            user.setCity(city);
             user.setEmail(email);
             user.setOauthId(oauthId);
             user.setRole(role);
