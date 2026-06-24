@@ -13,8 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import de.htwg.in.schneider.easygather.backend.dto.ProfileUpdateRequest;
+import de.htwg.in.schneider.easygather.backend.model.Role;
 import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -34,9 +37,9 @@ public class ProfileController {
             LOG.warn("JWT does not contain 'sub' claim");
             return ResponseEntity.badRequest().build();
         }
-        return userRepository.findByOauthId(oauthId)
+        return findOrCreateUser(jwt)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping
@@ -54,13 +57,13 @@ public class ProfileController {
             return ResponseEntity.badRequest().build();
         }
 
-        return userRepository.findByOauthId(oauthId)
+        return findOrCreateUser(jwt)
                 .map(user -> {
                     user.setFirstName(request.getFirstName().trim());
                     user.setLastName(request.getLastName().trim());
-                    user.setStreet(request.getStreet().trim());
-                    user.setPostalCode(request.getPostalCode().trim());
-                    user.setCity(request.getCity().trim());
+                    user.setStreet(trimOrEmpty(request.getStreet()));
+                    user.setPostalCode(trimOrEmpty(request.getPostalCode()));
+                    user.setCity(trimOrEmpty(request.getCity()));
                     User saved = userRepository.save(user);
                     LOG.info("Profile updated for user id={}", saved.getId());
                     return ResponseEntity.ok(saved);
@@ -71,15 +74,75 @@ public class ProfileController {
                 });
     }
 
+    private Optional<User> findOrCreateUser(Jwt jwt) {
+        String oauthId = jwt.getSubject();
+        if (oauthId == null) {
+            return Optional.empty();
+        }
+
+        Optional<User> byOauthId = userRepository.findByOauthId(oauthId);
+        if (byOauthId.isPresent()) {
+            return byOauthId;
+        }
+
+        String email = extractEmail(jwt);
+        if (email != null) {
+            Optional<User> byEmail = userRepository.findByEmail(email);
+            if (byEmail.isPresent()) {
+                User user = byEmail.get();
+                user.setOauthId(oauthId);
+                User saved = userRepository.save(user);
+                LOG.info("Linked oauthId to existing user id={} email={}", saved.getId(), email);
+                return Optional.of(saved);
+            }
+        }
+
+        if (email == null || email.isBlank()) {
+            LOG.warn("Cannot create user without email for oauthId={}", oauthId);
+            return Optional.empty();
+        }
+
+        User user = new User();
+        user.setOauthId(oauthId);
+        user.setEmail(email);
+        user.setRole(Role.KUNDE);
+        user.setFirstName("");
+        user.setLastName("");
+        user.setStreet("");
+        user.setPostalCode("");
+        user.setCity("");
+        User saved = userRepository.save(user);
+        LOG.info("Created new KUNDE user id={} email={} oauthId={}", saved.getId(), email, oauthId);
+        return Optional.of(saved);
+    }
+
+    private String extractEmail(Jwt jwt) {
+        String email = jwt.getClaimAsString("email");
+        if (email != null && !email.isBlank()) {
+            return email.trim();
+        }
+        Object raw = jwt.getClaim("email");
+        return raw != null ? raw.toString().trim() : null;
+    }
+
     private boolean isValidProfileUpdate(ProfileUpdateRequest request) {
         if (request == null) {
             return false;
         }
         return isNotBlank(request.getFirstName())
                 && isNotBlank(request.getLastName())
-                && isNotBlank(request.getStreet())
-                && isNotBlank(request.getPostalCode())
-                && isNotBlank(request.getCity());
+                && isValidOptionalPostalCode(request.getPostalCode());
+    }
+
+    private boolean isValidOptionalPostalCode(String postalCode) {
+        if (postalCode == null || postalCode.isBlank()) {
+            return true;
+        }
+        return postalCode.trim().matches("\\d{5}");
+    }
+
+    private String trimOrEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private boolean isNotBlank(String value) {

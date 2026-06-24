@@ -18,6 +18,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/profile").authenticated()
                         .requestMatchers("/api/delivery/**").authenticated()
+                        .requestMatchers("/api/order", "/api/order/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/product", "/api/product/*").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/product/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/product/*").authenticated()
