@@ -186,4 +186,4 @@ Die Anwendung startet auf **http://localhost:8081**.
 - **Catalog cleanup:** `removeRetiredCatalogProducts()` removes obsolete titles (e.g. Becher, Snacks für Kinder); Familien-Korb included items updated
 - **Included items:** extended `defaultIncludedItemsByTitle()` / `backfillIncludedItemsIfMissing()` for baskets, accessories, and new food items
 - **H2 migration:** `H2SchemaMigration` drops legacy `product.price_per_day` column (fixes startup on older local databases)
-- **MariaDB / Render:** same `H2SchemaMigration` adds missing `category.image_url` and `product.image_url` columns on startup if absent (idempotent; fixes `/api/product` on existing production databases)
+- **MariaDB / Render:** same `H2SchemaMigration` adds missing `category.image_url`, `product.image_url`, and `product.included_items_text` columns on startup if absent (idempotent; fixes `/api/product` on existing production databases)

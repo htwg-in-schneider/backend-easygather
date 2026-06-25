@@ -45,12 +45,13 @@ public class H2SchemaMigration {
     }
 
     private void migrateMissingImageUrlColumns(Connection connection, java.sql.Statement statement) {
-        String columnType = imageUrlColumnType(connection);
-        addColumnIfMissing(connection, statement, "category", "image_url", columnType);
-        addColumnIfMissing(connection, statement, "product", "image_url", columnType);
+        String lobType = lobColumnType(connection);
+        addColumnIfMissing(connection, statement, "category", "image_url", lobType);
+        addColumnIfMissing(connection, statement, "product", "image_url", lobType);
+        addColumnIfMissing(connection, statement, "product", "included_items_text", lobType);
     }
 
-    private String imageUrlColumnType(Connection connection) {
+    private String lobColumnType(Connection connection) {
         try {
             if (connection.getMetaData().getURL().toLowerCase().contains(":h2:")) {
                 return "CLOB";
@@ -94,17 +95,22 @@ public class H2SchemaMigration {
     private boolean hasColumn(Connection connection, String tableName, String columnName) {
         try {
             DatabaseMetaData meta = connection.getMetaData();
-            try (ResultSet rs = meta.getColumns(null, null, tableName, columnName)) {
-                if (rs.next()) {
-                    return true;
+            String catalog = connection.getCatalog();
+            String[] tables = { tableName, tableName.toUpperCase(), tableName.toLowerCase() };
+            for (String table : tables) {
+                try (ResultSet rs = meta.getColumns(catalog, null, table, null)) {
+                    while (rs.next()) {
+                        String found = rs.getString("COLUMN_NAME");
+                        if (found != null && found.equalsIgnoreCase(columnName)) {
+                            return true;
+                        }
+                    }
                 }
             }
-            try (ResultSet rs = meta.getColumns(null, null, tableName.toLowerCase(), columnName)) {
-                return rs.next();
-            }
         } catch (Exception ex) {
-            return false;
+            LOGGER.debug("hasColumn check failed for {}.{}: {}", tableName, columnName, ex.getMessage());
         }
+        return false;
     }
 
     private boolean isH2Database(Connection connection) {
