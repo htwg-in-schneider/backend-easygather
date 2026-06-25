@@ -4,36 +4,50 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 public class SecurityConfig {
 
-    private static OrRequestMatcher publicReadMatcher() {
-        return new OrRequestMatcher(
-                new AntPathRequestMatcher("/api/product", HttpMethod.GET.name()),
-                new AntPathRequestMatcher("/api/product/**", HttpMethod.GET.name()),
-                new AntPathRequestMatcher("/api/category", HttpMethod.GET.name()),
-                new AntPathRequestMatcher("/api/category/**", HttpMethod.GET.name()));
+    private static boolean isPublicShopRead(HttpServletRequest request) {
+        if (!HttpMethod.GET.matches(request.getMethod())) {
+            return false;
+        }
+        String uri = request.getRequestURI();
+        return uri.equals("/api/product") || uri.startsWith("/api/product/")
+                || uri.equals("/api/category") || uri.startsWith("/api/category/");
     }
+
+    private static final RequestMatcher PUBLIC_SHOP_READ = SecurityConfig::isPublicShopRead;
 
     /**
-     * Public shop reads bypass OAuth2/JWT completely (needed on Render + GitHub Pages).
+     * Shop reads without OAuth2/JWT (no BearerTokenAuthenticationFilter on this chain).
      */
     @Bean
-    WebSecurityCustomizer publicReadWebSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers(publicReadMatcher());
+    @Order(1)
+    public SecurityFilterChain publicShopReadChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher(PUBLIC_SHOP_READ)
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(withDefaults())
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .build();
     }
 
     @Bean
+    @Order(2)
     public SecurityFilterChain securedApiChain(HttpSecurity http) throws Exception {
         return http
+                .securityMatcher(new NegatedRequestMatcher(PUBLIC_SHOP_READ))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(withDefaults())
@@ -48,7 +62,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/category/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/category/*").authenticated()
                         .requestMatchers("/api/user", "/api/user/*").authenticated()
-                        .anyRequest().authenticated())
+                        .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
                 .build();
     }
