@@ -2,6 +2,14 @@
 
 Spring-Boot-Backend für **EasyGather** (Picknick- und Event-Bestellungen).
 
+## Dokumentation (Abgabe 5)
+
+| Dokument | Inhalt |
+|----------|--------|
+| **[DOKUMENTATION.md](./DOKUMENTATION.md)** | Backend-Abgabe-Doku (API, Datenmodell, Sicherheit, Testzugänge) |
+| **[README.md](./README.md)** (dieses File) | **Iterationen 0–15** – Entwicklungsverlauf Schritt für Schritt |
+| **[Frontend-DOKUMENTATION.md](https://github.com/htwg-in-schneider/frontend-easygather/blob/main/DOKUMENTATION.md)** | Vollständige Projektdoku (Use Cases, Design, URLs) |
+
 ## How to Run
 
 ```sh
