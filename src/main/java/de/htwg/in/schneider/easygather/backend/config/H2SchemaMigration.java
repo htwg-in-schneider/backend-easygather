@@ -1,5 +1,9 @@
 package de.htwg.in.schneider.easygather.backend.config;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
@@ -23,6 +27,7 @@ public class H2SchemaMigration {
             }
             try (var connection = dataSource.getConnection();
                     var statement = connection.createStatement()) {
+                migrateLegacyProductPriceColumn(connection, statement);
                 statement.execute(
                         "ALTER TABLE customer_order ALTER COLUMN status ENUM('BESTAETIGT', 'UNTERWEGS', 'ABGESCHLOSSEN')");
                 statement.execute(
@@ -36,6 +41,38 @@ public class H2SchemaMigration {
                 LOGGER.debug("Order status enum migration skipped: {}", ex.getMessage());
             }
         };
+    }
+
+    private void migrateLegacyProductPriceColumn(Connection connection, java.sql.Statement statement) {
+        if (!hasColumn(connection, "PRODUCT", "PRICE_PER_DAY")) {
+            return;
+        }
+        try {
+            if (hasColumn(connection, "PRODUCT", "PRICE")) {
+                statement.execute(
+                        "UPDATE product SET price = price_per_day WHERE price IS NULL AND price_per_day IS NOT NULL");
+            }
+            statement.execute("ALTER TABLE product DROP COLUMN price_per_day");
+            LOGGER.info("Dropped legacy product.price_per_day column");
+        } catch (Exception ex) {
+            LOGGER.warn("Could not migrate legacy product.price_per_day column: {}", ex.getMessage());
+        }
+    }
+
+    private boolean hasColumn(Connection connection, String tableName, String columnName) {
+        try {
+            DatabaseMetaData meta = connection.getMetaData();
+            try (ResultSet rs = meta.getColumns(null, null, tableName, columnName)) {
+                if (rs.next()) {
+                    return true;
+                }
+            }
+            try (ResultSet rs = meta.getColumns(null, null, tableName.toLowerCase(), columnName)) {
+                return rs.next();
+            }
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private boolean isH2Database(DataSource dataSource) {

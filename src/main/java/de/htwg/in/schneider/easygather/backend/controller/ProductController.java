@@ -146,6 +146,7 @@ public class ProductController {
         }
         product.setDescription(productDetails.getDescription());
         product.setImageUrl(productDetails.getImageUrl());
+        product.setIncludedItems(productDetails.getIncludedItems());
         product.setPrice(productDetails.getPrice());
         product.setTitle(productDetails.getTitle().trim());
         Product updatedProduct = productRepository.save(product);
