@@ -176,3 +176,14 @@ Die Anwendung startet auf **http://localhost:8081**.
 - **Order admin search:** multi-word customer name matching (same token logic as users)
 - **Image storage:** `Product.imageUrl` and `Category.imageUrl` as `@Lob` for Base64 uploads from the frontend; `DataLoader` no longer seeds Picsum URLs and removes placeholder URLs on startup
 - `application.properties`: `server.tomcat.max-http-form-post-size=8MB` for larger image payloads
+
+### Iteration 15: Picknickkorb-Konfigurator, Zubehör und Katalog-Erweiterungen
+
+- **Picknickkorb konfigurieren:** new product in category `picknickkoerbe` (price 0 €) – entry point for building a custom basket from individual items
+- **Configurator-only products** in `picknickkoerbe`: Servietten, Picknickdecke, Kerzen (10 Teelichter), Mehrwegbecher – seeded via `ensurePicknickConfiguratorProducts()`
+- **Essen & Getränke:** new/updated products (Salami-Rucola-Sandwich, Stilles Wasser, Sprudelwasser, Antipasti-Platte, Obstplatte, Veganes Sandwich, Gemüsesticks); `refreshPricesForTitles()` updates prices on every startup
+- **Events:** additional rental products (Schokobrunnen-Set, XXL Outdoor-Spiele-Set, Bluetooth-Musikbox, Popcornmaschine, Sonnenschirme)
+- **Catalog cleanup:** `removeRetiredCatalogProducts()` removes obsolete titles (e.g. Becher, Snacks für Kinder); Familien-Korb included items updated
+- **Included items:** extended `defaultIncludedItemsByTitle()` / `backfillIncludedItemsIfMissing()` for baskets, accessories, and new food items
+- **H2 migration:** `H2SchemaMigration` drops legacy `product.price_per_day` column (fixes startup on older local databases)
+- **MariaDB / Render:** same `H2SchemaMigration` adds missing `category.image_url` and `product.image_url` columns on startup if absent (idempotent; fixes `/api/product` on existing production databases)

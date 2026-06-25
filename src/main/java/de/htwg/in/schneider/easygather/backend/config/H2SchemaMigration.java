@@ -20,13 +20,14 @@ public class H2SchemaMigration {
 
     @Bean
     @Order(0)
-    public CommandLineRunner migrateH2OrderStatusEnum(DataSource dataSource) {
+    public CommandLineRunner migrateSchema(DataSource dataSource) {
         return args -> {
-            if (!isH2Database(dataSource)) {
-                return;
-            }
             try (var connection = dataSource.getConnection();
                     var statement = connection.createStatement()) {
+                migrateMissingImageUrlColumns(connection, statement);
+                if (!isH2Database(connection)) {
+                    return;
+                }
                 migrateLegacyProductPriceColumn(connection, statement);
                 statement.execute(
                         "ALTER TABLE customer_order ALTER COLUMN status ENUM('BESTAETIGT', 'UNTERWEGS', 'ABGESCHLOSSEN')");
@@ -38,9 +39,40 @@ public class H2SchemaMigration {
                         "ALTER TABLE delivery_order ALTER COLUMN status ENUM('EINGEGANGEN', 'ANGENOMMEN', 'UNTERWEGS', 'GELIEFERT')");
                 LOGGER.info("Ensured delivery_order.status supports accept workflow");
             } catch (Exception ex) {
-                LOGGER.debug("Order status enum migration skipped: {}", ex.getMessage());
+                LOGGER.debug("Schema migration skipped: {}", ex.getMessage());
             }
         };
+    }
+
+    private void migrateMissingImageUrlColumns(Connection connection, java.sql.Statement statement) {
+        String columnType = imageUrlColumnType(connection);
+        addColumnIfMissing(connection, statement, "category", "image_url", columnType);
+        addColumnIfMissing(connection, statement, "product", "image_url", columnType);
+    }
+
+    private String imageUrlColumnType(Connection connection) {
+        try {
+            if (connection.getMetaData().getURL().toLowerCase().contains(":h2:")) {
+                return "CLOB";
+            }
+        } catch (Exception ex) {
+            LOGGER.debug("Could not detect database for image_url column type: {}", ex.getMessage());
+        }
+        return "LONGTEXT";
+    }
+
+    private void addColumnIfMissing(Connection connection, java.sql.Statement statement, String tableName,
+            String columnName, String columnType) {
+        if (hasColumn(connection, tableName, columnName)) {
+            return;
+        }
+        try {
+            statement.execute(
+                    "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnType);
+            LOGGER.info("Added missing column {}.{}", tableName, columnName);
+        } catch (Exception ex) {
+            LOGGER.warn("Could not add column {}.{}: {}", tableName, columnName, ex.getMessage());
+        }
     }
 
     private void migrateLegacyProductPriceColumn(Connection connection, java.sql.Statement statement) {
@@ -75,8 +107,8 @@ public class H2SchemaMigration {
         }
     }
 
-    private boolean isH2Database(DataSource dataSource) {
-        try (var connection = dataSource.getConnection()) {
+    private boolean isH2Database(Connection connection) {
+        try {
             return connection.getMetaData().getURL().contains(":h2:");
         } catch (Exception ex) {
             return false;
