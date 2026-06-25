@@ -4,6 +4,7 @@ public class CategoryRequest {
 
     private String title;
     private String shopCategory;
+    private String imageUrl;
 
     public String getTitle() {
         return title;
@@ -19,5 +20,13 @@ public class CategoryRequest {
 
     public void setShopCategory(String shopCategory) {
         this.shopCategory = shopCategory;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

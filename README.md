@@ -166,3 +166,13 @@ Die Anwendung startet auf **http://localhost:8081**.
 - `.github/workflows/verify.yml`: Maven build verification on push/PR
 - **Live API:** `https://easygather-backend.onrender.com`
 - **Note:** outgoing SMTP is blocked on Render; order confirmation e-mails do not work in production (orders are still saved)
+
+### Iteration 14: Admin delivery management, search and image storage
+
+- **Admin delivery API:** `GET /api/delivery/admin/all?q=` – all deliveries with optional search (order number, customer, driver, status)
+- **Driver assignment:** `PUT /api/delivery/admin/{id}/assign` (body: `driverId`), `PUT /api/delivery/admin/{id}/unassign` – admin-only; resets delivery to `EINGEGANGEN` on unassign
+- New DTO `AdminDeliverySummary`; extended `AdminOrderDetail` / `AdminOrderSummary` with delivery and driver fields
+- **User API:** optional `?role=FAHRER` on `GET /api/user` for driver dropdown; improved search – full name, multi-word queries (e.g. `Max Kunde`), role labels (`kunde`, `fahrer`, `admin`)
+- **Order admin search:** multi-word customer name matching (same token logic as users)
+- **Image storage:** `Product.imageUrl` and `Category.imageUrl` as `@Lob` for Base64 uploads from the frontend; `DataLoader` no longer seeds Picsum URLs and removes placeholder URLs on startup
+- `application.properties`: `server.tomcat.max-http-form-post-size=8MB` for larger image payloads

@@ -9,11 +9,13 @@ import de.htwg.in.schneider.easygather.backend.model.Order;
 import de.htwg.in.schneider.easygather.backend.model.OrderItem;
 import de.htwg.in.schneider.easygather.backend.model.OrderStatus;
 import de.htwg.in.schneider.easygather.backend.model.PaymentMethod;
+import de.htwg.in.schneider.easygather.backend.model.DeliveryStatus;
 import de.htwg.in.schneider.easygather.backend.model.User;
 
 public class AdminOrderDetail {
 
     private Long id;
+    private String orderNumber;
     private String street;
     private String postalCode;
     private String city;
@@ -33,9 +35,21 @@ public class AdminOrderDetail {
     private String customerLastName;
     private String customerEmail;
 
+    private Long deliveryId;
+    private DeliveryStatus deliveryStatus;
+    private Long driverId;
+    private String driverFirstName;
+    private String driverLastName;
+    private String driverEmail;
+
     public static AdminOrderDetail from(Order order) {
+        return from(order, null);
+    }
+
+    public static AdminOrderDetail from(Order order, AdminDeliverySummary delivery) {
         AdminOrderDetail detail = new AdminOrderDetail();
         detail.id = order.getId();
+        detail.orderNumber = order.getOrderNumber();
         detail.street = order.getStreet();
         detail.postalCode = order.getPostalCode();
         detail.city = order.getCity();
@@ -54,11 +68,23 @@ public class AdminOrderDetail {
             detail.customerLastName = customer.getLastName();
             detail.customerEmail = customer.getEmail();
         }
+        if (delivery != null) {
+            detail.deliveryId = delivery.getId();
+            detail.deliveryStatus = delivery.getStatus();
+            detail.driverId = delivery.getDriverId();
+            detail.driverFirstName = delivery.getDriverFirstName();
+            detail.driverLastName = delivery.getDriverLastName();
+            detail.driverEmail = delivery.getDriverEmail();
+        }
         return detail;
     }
 
     public Long getId() {
         return id;
+    }
+
+    public String getOrderNumber() {
+        return orderNumber;
     }
 
     public String getStreet() {
@@ -119,5 +145,29 @@ public class AdminOrderDetail {
 
     public String getCustomerEmail() {
         return customerEmail;
+    }
+
+    public Long getDeliveryId() {
+        return deliveryId;
+    }
+
+    public DeliveryStatus getDeliveryStatus() {
+        return deliveryStatus;
+    }
+
+    public Long getDriverId() {
+        return driverId;
+    }
+
+    public String getDriverFirstName() {
+        return driverFirstName;
+    }
+
+    public String getDriverLastName() {
+        return driverLastName;
+    }
+
+    public String getDriverEmail() {
+        return driverEmail;
     }
 }

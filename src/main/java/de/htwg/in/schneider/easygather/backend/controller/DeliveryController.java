@@ -2,6 +2,8 @@ package de.htwg.in.schneider.easygather.backend.controller;
 
 
 
+import java.util.List;
+
 import java.util.Optional;
 
 
@@ -32,9 +34,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import org.springframework.web.bind.annotation.RestController;
 
 
+
+import de.htwg.in.schneider.easygather.backend.dto.AdminDeliverySummary;
+
+import de.htwg.in.schneider.easygather.backend.dto.AssignDriverRequest;
 
 import de.htwg.in.schneider.easygather.backend.dto.DeliveryStatusUpdateRequest;
 
@@ -49,6 +57,8 @@ import de.htwg.in.schneider.easygather.backend.model.User;
 import de.htwg.in.schneider.easygather.backend.repository.UserRepository;
 
 import de.htwg.in.schneider.easygather.backend.service.DeliveryService;
+
+import de.htwg.in.schneider.easygather.backend.util.AdminAuth;
 
 
 
@@ -99,6 +109,100 @@ public class DeliveryController {
                 driver.get().getEmail());
 
         return ResponseEntity.ok(dashboard);
+
+    }
+
+
+
+    @GetMapping("/admin/all")
+
+    public ResponseEntity<List<AdminDeliverySummary>> getAllDeliveriesForAdmin(@AuthenticationPrincipal Jwt jwt,
+
+            @RequestParam(required = false) String q) {
+
+        if (!AdminAuth.isAdmin(jwt, userRepository)) {
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        }
+
+        List<AdminDeliverySummary> deliveries = deliveryService.getAllForAdmin(q);
+
+        LOG.info("Returning {} deliveries for admin search q={}", deliveries.size(), q);
+
+        return ResponseEntity.ok(deliveries);
+
+    }
+
+
+
+    @PutMapping("/admin/{id}/assign")
+
+    public ResponseEntity<?> assignDriverByAdmin(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+
+            @RequestBody AssignDriverRequest request) {
+
+        if (!AdminAuth.isAdmin(jwt, userRepository)) {
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        }
+
+        if (request == null || request.getDriverId() == null) {
+
+            return ResponseEntity.badRequest().body("Driver id is required");
+
+        }
+
+        try {
+
+            AdminDeliverySummary updated = deliveryService.assignDriverByAdmin(id, request.getDriverId());
+
+            LOG.info("Admin assigned driver {} to delivery {}", request.getDriverId(), updated.getOrderNumber());
+
+            return ResponseEntity.ok(updated);
+
+        } catch (IllegalArgumentException ex) {
+
+            return ResponseEntity.notFound().build();
+
+        } catch (IllegalStateException ex) {
+
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+
+        }
+
+    }
+
+
+
+    @PutMapping("/admin/{id}/unassign")
+
+    public ResponseEntity<?> unassignDriverByAdmin(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+
+        if (!AdminAuth.isAdmin(jwt, userRepository)) {
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        }
+
+        try {
+
+            AdminDeliverySummary updated = deliveryService.unassignDriverByAdmin(id);
+
+            LOG.info("Admin unassigned driver from delivery {}", updated.getOrderNumber());
+
+            return ResponseEntity.ok(updated);
+
+        } catch (IllegalArgumentException ex) {
+
+            return ResponseEntity.notFound().build();
+
+        } catch (IllegalStateException ex) {
+
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+
+        }
 
     }
 

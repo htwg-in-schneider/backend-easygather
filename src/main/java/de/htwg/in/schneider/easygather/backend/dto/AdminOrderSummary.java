@@ -10,6 +10,7 @@ import de.htwg.in.schneider.easygather.backend.model.PaymentMethod;
 public class AdminOrderSummary {
 
     private Long id;
+    private String orderNumber;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
@@ -21,9 +22,11 @@ public class AdminOrderSummary {
     private String customerLastName;
     private String customerEmail;
 
-    public AdminOrderSummary(Long id, LocalDateTime createdAt, OrderStatus status, PaymentMethod paymentMethod,
-            double total, String customerFirstName, String customerLastName, String customerEmail) {
+    public AdminOrderSummary(Long id, String orderNumber, LocalDateTime createdAt, OrderStatus status,
+            PaymentMethod paymentMethod, double total, String customerFirstName, String customerLastName,
+            String customerEmail) {
         this.id = id;
+        this.orderNumber = orderNumber;
         this.createdAt = createdAt;
         this.status = status;
         this.paymentMethod = paymentMethod;
@@ -35,6 +38,10 @@ public class AdminOrderSummary {
 
     public Long getId() {
         return id;
+    }
+
+    public String getOrderNumber() {
+        return orderNumber;
     }
 
     public LocalDateTime getCreatedAt() {
