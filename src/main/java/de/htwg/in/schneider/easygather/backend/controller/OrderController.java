@@ -209,13 +209,17 @@ public class OrderController {
             return false;
         }
         return isNotBlank(address.getStreet())
-                && isNotBlank(address.getPostalCode())
+                && isValidPostalCode(address.getPostalCode())
                 && isNotBlank(address.getCity())
                 && isNotBlank(orderRequest.getPaymentMethod());
     }
 
     private boolean isNotBlank(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private boolean isValidPostalCode(String postalCode) {
+        return postalCode != null && postalCode.trim().matches("\\d{5}");
     }
 
     private String normalizeCouponCode(String couponCode) {
