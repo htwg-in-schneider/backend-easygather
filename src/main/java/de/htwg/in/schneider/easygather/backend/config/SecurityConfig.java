@@ -23,7 +23,9 @@ public class SecurityConfig {
     public SecurityFilterChain publicReadChain(HttpSecurity http) throws Exception {
         return http
                 .securityMatcher(new OrRequestMatcher(
+                        new AntPathRequestMatcher("/api/product", HttpMethod.GET.name()),
                         new AntPathRequestMatcher("/api/product/**", HttpMethod.GET.name()),
+                        new AntPathRequestMatcher("/api/category", HttpMethod.GET.name()),
                         new AntPathRequestMatcher("/api/category/**", HttpMethod.GET.name())))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
