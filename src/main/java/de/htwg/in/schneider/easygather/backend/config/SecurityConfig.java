@@ -4,9 +4,9 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -15,27 +15,23 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 @Configuration
 public class SecurityConfig {
 
+    private static OrRequestMatcher publicReadMatcher() {
+        return new OrRequestMatcher(
+                new AntPathRequestMatcher("/api/product", HttpMethod.GET.name()),
+                new AntPathRequestMatcher("/api/product/**", HttpMethod.GET.name()),
+                new AntPathRequestMatcher("/api/category", HttpMethod.GET.name()),
+                new AntPathRequestMatcher("/api/category/**", HttpMethod.GET.name()));
+    }
+
     /**
-     * Public product/category reads without JWT validation (needed for shop on GitHub Pages).
+     * Public shop reads bypass OAuth2/JWT completely (needed on Render + GitHub Pages).
      */
     @Bean
-    @Order(1)
-    public SecurityFilterChain publicReadChain(HttpSecurity http) throws Exception {
-        return http
-                .securityMatcher(new OrRequestMatcher(
-                        new AntPathRequestMatcher("/api/product", HttpMethod.GET.name()),
-                        new AntPathRequestMatcher("/api/product/**", HttpMethod.GET.name()),
-                        new AntPathRequestMatcher("/api/category", HttpMethod.GET.name()),
-                        new AntPathRequestMatcher("/api/category/**", HttpMethod.GET.name())))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(withDefaults())
-                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
-                .build();
+    WebSecurityCustomizer publicReadWebSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers(publicReadMatcher());
     }
 
     @Bean
-    @Order(2)
     public SecurityFilterChain securedApiChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
